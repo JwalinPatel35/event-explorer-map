@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { MapMarker, MapState, getActiveLayer, generateId, saveMapState } from "@/lib/map-store";
+import { MapMarker, MapState, generateId, saveMapState } from "@/lib/map-store";
 import MarkerPin from "./MarkerPin";
 import EventDialog from "./EventDialog";
 
@@ -16,8 +16,6 @@ const MapViewer = ({ mapState, setMapState, isAdmin }: MapViewerProps) => {
   const [newMarkerPos, setNewMarkerPos] = useState<{ x: number; y: number } | null>(null);
   const [form, setForm] = useState({ title: "", room: "", description: "", time: "", category: "" });
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const activeLayer = getActiveLayer(mapState);
 
   const handleMapClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -45,14 +43,7 @@ const MapViewer = ({ mapState, setMapState, isAdmin }: MapViewerProps) => {
       y: newMarkerPos.y,
       ...form,
     };
-    const updated: MapState = {
-      ...mapState,
-      layers: mapState.layers.map(l =>
-        l.id === mapState.activeLayerId
-          ? { ...l, markers: [...l.markers, newMarker] }
-          : l
-      ),
-    };
+    const updated = { ...mapState, markers: [...mapState.markers, newMarker] };
     setMapState(updated);
     saveMapState(updated);
     setAddingMarker(false);
@@ -67,12 +58,12 @@ const MapViewer = ({ mapState, setMapState, isAdmin }: MapViewerProps) => {
         onClick={handleMapClick}
       >
         <img
-          src={activeLayer.svgUrl}
+          src={mapState.svgUrl}
           alt="Campus Map"
           className="w-full h-full object-contain select-none"
           draggable={false}
         />
-        {activeLayer.markers.map((marker) => (
+        {mapState.markers.map((marker) => (
           <MarkerPin
             key={marker.id}
             marker={marker}

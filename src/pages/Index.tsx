@@ -1,23 +1,13 @@
 import { useState } from "react";
-import { loadMapState, MapState, getActiveLayer } from "@/lib/map-store";
-import { saveMapState } from "@/lib/map-store";
+import { loadMapState, MapState } from "@/lib/map-store";
 import MapViewer from "@/components/MapViewer";
 import AdminPanel from "@/components/AdminPanel";
-import { Settings, Map, Layers } from "lucide-react";
+import { Settings, Map } from "lucide-react";
 
 const Index = () => {
   const [mapState, setMapState] = useState<MapState>(loadMapState);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const [showLayers, setShowLayers] = useState(false);
-
-  const switchLayer = (id: string) => {
-    const updated = { ...mapState, activeLayerId: id };
-    setMapState(updated);
-    saveMapState(updated);
-  };
-
-  const activeLayer = getActiveLayer(mapState);
 
   return (
     <div className="flex flex-col h-screen bg-background grid-bg overflow-hidden">
@@ -30,38 +20,6 @@ const Index = () => {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          {/* Layer switcher - always visible */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLayers(!showLayers)}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-display text-muted-foreground hover:text-primary border border-border rounded-lg hover:border-primary/30 transition"
-            >
-              <Layers className="w-4 h-4" />
-              {activeLayer.name}
-            </button>
-            {showLayers && (
-              <div className="absolute right-0 top-full mt-2 w-56 glass rounded-xl p-2 space-y-1 z-50 shadow-xl">
-                <p className="px-2 py-1 text-[10px] font-display text-muted-foreground uppercase tracking-wider">Map Layers</p>
-                {mapState.layers.map((layer) => (
-                  <button
-                    key={layer.id}
-                    onClick={() => { switchLayer(layer.id); setShowLayers(false); }}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-display transition ${
-                      layer.id === mapState.activeLayerId
-                        ? "bg-primary/15 text-primary border border-primary/30"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent"
-                    }`}
-                  >
-                    {layer.name}
-                    <span className="block text-[10px] text-muted-foreground mt-0.5">
-                      {layer.markers.length} marker{layer.markers.length !== 1 ? "s" : ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {!isAdmin ? (
             <button
               onClick={() => setIsAdmin(true)}
