@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import { MapMarker, MapState, saveMapState } from "@/lib/map-store";
-import { Upload, Trash2, Edit3, X, Check } from "lucide-react";
+import { MapMarker, MapState, MapLayer, generateId, saveMapState, getActiveLayer } from "@/lib/map-store";
+import { Upload, Trash2, Edit3, X, Check, Layers, Plus } from "lucide-react";
 
 interface AdminPanelProps {
   mapState: MapState;
@@ -10,20 +10,75 @@ interface AdminPanelProps {
 
 const AdminPanel = ({ mapState, setMapState, onClose }: AdminPanelProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const newLayerFileRef = useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<MapMarker>>({});
+  const [newLayerName, setNewLayerName] = useState("");
+  const [showNewLayer, setShowNewLayer] = useState(false);
+
+  const activeLayer = getActiveLayer(mapState);
 
   const handleSvgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    const updated = { ...mapState, svgUrl: url };
+    const updated: MapState = {
+      ...mapState,
+      layers: mapState.layers.map(l =>
+        l.id === mapState.activeLayerId ? { ...l, svgUrl: url } : l
+      ),
+    };
+    setMapState(updated);
+    saveMapState(updated);
+  };
+
+  const handleNewLayerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const name = newLayerName.trim() || file.name.replace('.svg', '');
+    const newLayer: MapLayer = {
+      id: generateId(),
+      name,
+      svgUrl: url,
+      markers: [],
+    };
+    const updated: MapState = {
+      layers: [...mapState.layers, newLayer],
+      activeLayerId: newLayer.id,
+    };
+    setMapState(updated);
+    saveMapState(updated);
+    setShowNewLayer(false);
+    setNewLayerName("");
+  };
+
+  const deleteLayer = (id: string) => {
+    if (mapState.layers.length <= 1) return;
+    const remaining = mapState.layers.filter(l => l.id !== id);
+    const updated: MapState = {
+      layers: remaining,
+      activeLayerId: mapState.activeLayerId === id ? remaining[0].id : mapState.activeLayerId,
+    };
+    setMapState(updated);
+    saveMapState(updated);
+  };
+
+  const switchLayer = (id: string) => {
+    const updated: MapState = { ...mapState, activeLayerId: id };
     setMapState(updated);
     saveMapState(updated);
   };
 
   const deleteMarker = (id: string) => {
-    const updated = { ...mapState, markers: mapState.markers.filter((m) => m.id !== id) };
+    const updated: MapState = {
+      ...mapState,
+      layers: mapState.layers.map(l =>
+        l.id === mapState.activeLayerId
+          ? { ...l, markers: l.markers.filter(m => m.id !== id) }
+          : l
+      ),
+    };
     setMapState(updated);
     saveMapState(updated);
   };
@@ -34,9 +89,13 @@ const AdminPanel = ({ mapState, setMapState, onClose }: AdminPanelProps) => {
   };
 
   const saveEdit = (id: string) => {
-    const updated = {
+    const updated: MapState = {
       ...mapState,
-      markers: mapState.markers.map((m) => (m.id === id ? { ...m, ...editForm } : m)),
+      layers: mapState.layers.map(l =>
+        l.id === mapState.activeLayerId
+          ? { ...l, markers: l.markers.map(m => m.id === id ? { ...m, ...editForm } : m) }
+          : l
+      ),
     };
     setMapState(updated);
     saveMapState(updated);
@@ -52,26 +111,90 @@ const AdminPanel = ({ mapState, setMapState, onClose }: AdminPanelProps) => {
         </button>
       </div>
 
+      {/* Layers Section */}
       <div className="p-5 border-b border-border space-y-3">
-        <h3 className="font-display text-xs text-muted-foreground uppercase tracking-wider">Map SVG</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5" /> Layers ({mapState.layers.length})
+          </h3>
+          <button
+            onClick={() => setShowNewLayer(!showNewLayer)}
+            className="text-xs text-primary hover:text-primary/80 transition flex items-center gap-1 font-display"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add
+          </button>
+        </div>
+
+        {showNewLayer && (
+          <div className="space-y-2 bg-muted rounded-lg p-3 border border-border">
+            <input
+              className="w-full bg-background border border-border rounded px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Layer name"
+              value={newLayerName}
+              onChange={(e) => setNewLayerName(e.target.value)}
+            />
+            <button
+              onClick={() => newLayerFileRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 bg-background border border-dashed border-primary/30 rounded-lg py-2 text-xs text-primary hover:bg-primary/10 transition font-display"
+            >
+              <Upload className="w-3.5 h-3.5" /> Upload SVG for Layer
+            </button>
+            <input ref={newLayerFileRef} type="file" accept=".svg" onChange={handleNewLayerUpload} className="hidden" />
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          {mapState.layers.map((layer) => (
+            <div
+              key={layer.id}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition ${
+                layer.id === mapState.activeLayerId
+                  ? 'bg-primary/15 border border-primary/30 text-primary'
+                  : 'bg-muted border border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
+              onClick={() => switchLayer(layer.id)}
+            >
+              <span className="font-display text-xs truncate">{layer.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground">{layer.markers.length} pins</span>
+                {mapState.layers.length > 1 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteLayer(layer.id); }}
+                    className="p-0.5 text-muted-foreground hover:text-destructive transition"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Replace SVG for active layer */}
+      <div className="p-5 border-b border-border space-y-3">
+        <h3 className="font-display text-xs text-muted-foreground uppercase tracking-wider">
+          Replace SVG — {activeLayer.name}
+        </h3>
         <button
           onClick={() => fileInputRef.current?.click()}
           className="w-full flex items-center justify-center gap-2 bg-muted border border-dashed border-primary/30 rounded-lg py-3 text-sm text-primary hover:bg-primary/10 transition font-display"
         >
           <Upload className="w-4 h-4" />
-          Upload New Map SVG
+          Upload New SVG
         </button>
         <input ref={fileInputRef} type="file" accept=".svg" onChange={handleSvgUpload} className="hidden" />
       </div>
 
+      {/* Markers for active layer */}
       <div className="flex-1 overflow-y-auto p-5 space-y-3">
         <h3 className="font-display text-xs text-muted-foreground uppercase tracking-wider">
-          Markers ({mapState.markers.length})
+          Markers — {activeLayer.name} ({activeLayer.markers.length})
         </h3>
-        {mapState.markers.length === 0 && (
+        {activeLayer.markers.length === 0 && (
           <p className="text-sm text-muted-foreground italic">No markers yet. Click on the map to add one.</p>
         )}
-        {mapState.markers.map((marker) => (
+        {activeLayer.markers.map((marker) => (
           <div key={marker.id} className="bg-muted rounded-lg p-3 space-y-2 border border-border">
             {editingId === marker.id ? (
               <div className="space-y-2">
