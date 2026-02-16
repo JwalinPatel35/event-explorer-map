@@ -2,6 +2,7 @@ import { useState } from "react";
 import { loadMapState, MapState } from "@/lib/map-store";
 import MapViewer from "@/components/MapViewer";
 import AdminPanel from "@/components/AdminPanel";
+import LayerSwitcher from "@/components/LayerSwitcher";
 import { Settings, Map } from "lucide-react";
 
 const Index = () => {
@@ -11,7 +12,6 @@ const Index = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background grid-bg overflow-hidden">
-      {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 glass border-b border-primary/10 z-30">
         <div className="flex items-center gap-3">
           <Map className="w-6 h-6 text-primary" />
@@ -49,7 +49,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Map area */}
       <main className="flex-1 relative overflow-hidden">
         {isAdmin && !showAdmin && (
           <div className="absolute top-4 left-4 z-20 glass rounded-lg px-4 py-2">
@@ -57,6 +56,7 @@ const Index = () => {
           </div>
         )}
         <MapViewer mapState={mapState} setMapState={setMapState} isAdmin={isAdmin} />
+        <LayerSwitcher mapState={mapState} setMapState={setMapState} />
         {showAdmin && <AdminPanel mapState={mapState} setMapState={setMapState} onClose={() => setShowAdmin(false)} />}
       </main>
     </div>
