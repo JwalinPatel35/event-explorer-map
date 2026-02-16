@@ -67,12 +67,12 @@ const MapViewer = ({ mapState, setMapState, isAdmin }: MapViewerProps) => {
         onClick={handleMapClick}
       >
         <img
-          src={activeLayer.svgUrl}
+          src={activeLayer?.svgUrl || '/map.svg'}
           alt="Campus Map"
           className="w-full h-full object-contain select-none"
           draggable={false}
         />
-        {activeLayer.markers.map((marker) => (
+        {activeLayer?.markers?.map((marker) => (
           <MarkerPin
             key={marker.id}
             marker={marker}
