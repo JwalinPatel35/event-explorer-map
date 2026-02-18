@@ -97,6 +97,11 @@
     50% { transform: scale(1.15); opacity: 0.8; }
   }
 
+  @keyframes scanline {
+    0%   { top: 0%; }
+    100% { top: 100%; }
+  }
+
   .grid-bg {
     background-image:
       linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
