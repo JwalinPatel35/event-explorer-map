@@ -15,9 +15,12 @@ const Index = () => {
       <header className="flex items-center justify-between px-6 py-4 glass border-b border-primary/10 z-30">
         <div className="flex items-center gap-3">
           <Map className="w-6 h-6 text-primary" />
-          <h1 className="font-display text-lg font-bold tracking-wider text-primary neon-text">
-            CAMPUS MAP
-          </h1>
+          <div className="flex items-baseline gap-2">
+            <h1 className="font-display text-lg font-bold tracking-wider text-primary neon-text">
+              Prakarsh'26
+            </h1>
+            <span className="text-xs font-display text-muted-foreground tracking-widest uppercase">Campus Map</span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {!isAdmin ? (
