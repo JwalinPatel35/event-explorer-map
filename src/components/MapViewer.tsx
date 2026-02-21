@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { MapMarker, MapState, generateId, saveMapState, getActiveLayer } from "@/lib/map-store";
 import MarkerPin from "./MarkerPin";
-import EventDialog from "./EventDialog";
+import EventPanel from "./EventPanel";
 
 interface MapViewerProps {
   mapState: MapState;
@@ -141,7 +141,7 @@ const MapViewer = ({ mapState, setMapState, isAdmin }: MapViewerProps) => {
         </div>
       )}
 
-      <EventDialog
+      <EventPanel
         marker={selectedMarker}
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
